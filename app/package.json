@@ -1,0 +1,13 @@
+{
+  "name": "my-eks-app",
+  "version": "1.0.0",
+  "description": "Sample Node app for GitHub Actions + EKS",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "echo \"No tests yet\""
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
