@@ -1,0 +1,49 @@
+name: CI-CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+
+env:
+  AWS_REGION: ap-south-1
+  ECR_REPOSITORY: myapp
+  CLUSTER_NAME: eks-pipeline
+  HELM_CHART_PATH: deploy/helm/myapp
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  build-deploy:
+    runs-on: [self-hosted, linux, eks-runner]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        working-directory: app
+        run: npm ci
+
+      - name: Docker login to ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker image
+        run: |
+          docker build -t $ECR_REPOSITORY:$IMAGE_TAG ./app
+          docker tag $ECR_REPOSITORY:$IMAGE_TAG ${{ steps.ecr.outputs.registry }}/${ECR_REPOSITORY}:$IMAGE_TAG
+
+      - name: Push Docker image
+        run: docker push ${{ steps.ecr.outputs.registry }}/${ECR_REPOSITORY}:$IMAGE_TAG
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name $CLUSTER_NAME --region $AWS_REGION
+
+      - name: Deploy to EKS
+        run: |
+          helm upgrade --install myapp $HELM_CHART_PATH \
+            --namespace myapp --create-namespace \
+            --set image.repository=${{ steps.ecr.outputs.registry }}/${ECR_REPOSITORY} \
+            --set image.tag=${IMAGE_TAG}
