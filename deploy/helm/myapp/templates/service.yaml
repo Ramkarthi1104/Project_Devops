@@ -3,9 +3,10 @@ kind: Service
 metadata:
   name: myapp-service
 spec:
-  type: {{ .Values.service.type }}
+  type: LoadBalancer
   selector:
     app: myapp
   ports:
-    - port: {{ .Values.service.port }}
-      targetPort: 3000
+    - protocol: TCP
+      port: 80
+      targetPort: 80
