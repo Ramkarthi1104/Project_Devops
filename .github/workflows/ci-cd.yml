@@ -3,6 +3,7 @@ name: CI/CD to EKS
 on:
   push:
     branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
   deploy:
